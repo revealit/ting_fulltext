@@ -1,8 +1,6 @@
 Ting fulltext
 =============
 
-[Ding2][] module for displaying full-text/extended version of
-datawell-objects.
+Backport of [Ting fulltext from Ding2][origin] for use with Ding 1.xsites.
 
-[Ding2]: https://github.com/ding2
-
+[origin]: https://github.com/ding2/ting_fulltext
