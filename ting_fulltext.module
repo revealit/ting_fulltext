@@ -7,70 +7,42 @@
  */
 
 /**
- * Implements hook_menu().
- */
-function ting_fulltext_menu() {
-  $items = array();
-
-  $items['ting/object/%ting_fulltext_object/fulltext'] =
-    array(
-	  'page callback' => 'ting_fulltext_page_view',
-	  'page arguments' => array(2),
-	  'access arguments' => array('access content'),
-	  'file' => 'includes/ting_fulltext.pages.inc',
-	  'type' => MENU_CALLBACK | MENU_VISIBLE_IN_BREADCRUMB,
-	  );
-
-  return $items;
-}
-
-/**
- * Implements hook_theme
+ * Implements hook_theme().
  */
 function ting_fulltext_theme($existing, $type, $theme, $path) {
-  $render_array['ting_fulltext'] =
-    array('template' => 'ting_fulltext_view',
-	  'render element' => 'element',);
-  return $render_array;
+  return array(
+    'ting_fulltext' => array(
+      'arguments' => array('element' => NULL),
+      'template' => 'ting_fulltext_view',
+    ),
+  );
 }
 
 /**
- * Loader function to get the fulltext object as raw data(xml)  for parsing.
+ * Loader function to get the fulltext object as raw data(xml) for parsing.
  */
 function ting_fulltext_object_load($object_id) {
   if (empty($object_id)) {
     return FALSE;
   }
+
   module_load_include('client.inc', 'ting');
-  $xml = ting_cache_get($object_id . ':FULLTEXT');
-  if( !$xml ) {    
+  $xml = '';
+
+  if (empty($xml)) {
+    // Configure basic object search.
     $request = ting_get_request_factory()->getObjectRequest();
     $request->setObjectId($object_id);
-    $request->setProfile(variable_get('ting_search_profile', ''));
-    $request->setFormat('docbook');
+
+    // Add agency and profile.
+    $request = ting_add_agency($request);
+    $request = ting_add_profile($request);
+
+    // We want docbook back as XML.
     $request->setObjectFormat('docbook');
     $request->setOutputType('xml');
     $xml = ting_execute($request);
-    ting_cache_set($object_id . ':FULLTEXT', $xml);
   }
+
   return $xml;
-}
-
-
-/**
- * Preprocess variables for ting_relation.tpl.php.
- */
-function ting_fulltext_preprocess_ting_relation(&$variables) {
-
-  $relation = $variables['object'] = $variables['elements']['#object'];
-  if (isset($relation->reply) &&
-      is_array($relation->reply->formatsAvailable) &&
-      in_array('docbook', $relation->reply->formatsAvailable)) {
-    $variables['content']['docbook_link'] =
-      array(
-	    '#prefix' => '<div class="field-type-ting-relation"><div class ="field-items">',
-	    '#markup' => l(t('Full-text version'), 'ting/object/' . $relation->ding_entity_id . '/fulltext'),
-	    '#suffix' => '</div></div>',
-	    );
-  }
 }
